@@ -1,4 +1,3 @@
-
 import gym
 import math
 import time
@@ -50,8 +49,6 @@ class chargingEnv(gym.Env):
 
         self.action_space = spaces.Discrete(2)
 
-
-
     def _calRewardAndState(self, action):
         ''' function to calculate the reward and next state. '''
         if self.charge <= 0:
@@ -93,6 +90,7 @@ class chargingEnv(gym.Env):
         initialState = [self.x, self.charge, self.deadline]
 
         return initialState
+
 
 class inventoryEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -137,8 +135,6 @@ class inventoryEnv(gym.Env):
 
         self.action_space = spaces.Discrete(2)
 
-
-
     def _calRewardAndState(self, action):
         ''' function to calculate the reward and next state. '''
 
@@ -180,57 +176,58 @@ class inventoryEnv(gym.Env):
 
 class MakeToStockEnv(gym.Env):
     metadata = {'render.modes': ['human']}
+
     def __init__(self, seed, customer_classes, m, B, mu):
         super(MakeToStockEnv, self).__init__()
-        self.seed = seed 
+        self.seed = seed
         self.customer_classes = customer_classes
-        self.m = m 
-        self.B = B 
-        self.mu = mu 
+        self.m = m
+        self.B = B
+        self.mu = mu
         self.myRandomPRNG = np.random.RandomState(self.seed)
-        
-        self.k_choices = np.arange(0, self.customer_classes+1)
+
+        self.k_choices = np.arange(0, self.customer_classes + 1)
 
         self.R = np.linspace(200, 10, num=self.customer_classes)
 
     def _h_s(self, scalar_state):
-        return 0.1*(scalar_state)**2
-
+        return 0.1 * (scalar_state) ** 2
 
     def _calRewardAndState(self, action):
 
         if action == 0:
-            reward = -1*self._h_s(self.scalar_state)
+            reward = -1 * self._h_s(self.scalar_state)
             self.scalar_state = self.scalar_state
         elif action == 1:
 
             if self.scalar_state == (self.m + self.B):
-                reward = -1*self._h_s(self.scalar_state)
+                reward = -1 * self._h_s(self.scalar_state)
                 self.scalar_state = self.scalar_state
 
             else:
-                reward = self.R[self.vector_state-1] - self._h_s(self.scalar_state) #self.vector_state - 1 for correct indexing
+                reward = self.R[self.vector_state - 1] - self._h_s(
+                    self.scalar_state)  # self.vector_state - 1 for correct indexing
                 self.scalar_state = min(self.m + self.B, self.scalar_state + 1)
         else:
             print(f'wrong action value. exiting...')
             exit(2)
-    
+
         k = 0
-        while (k <= 1): 
+        while (k < 1):  # bug fix, before k <= 1
             w = min(self.m, self.scalar_state)
-            probabilites = np.append( (self.mu*w)/(self.mu*w + self.customer_classes), np.repeat(1 / (self.mu*w + self.customer_classes), self.customer_classes))
-            
+            probabilites = np.append((self.mu * w) / (self.mu * w + self.customer_classes),
+                                     np.repeat(1 / (self.mu * w + self.customer_classes), self.customer_classes))
+
             k = self.myRandomPRNG.choice(self.k_choices, p=probabilites)
-            
+
             if k == 0:
                 self.scalar_state = max(0, self.scalar_state - 1)
 
-        self.vector_state = k 
+        self.vector_state = k
 
         nextState = [self.scalar_state, self.vector_state]
 
-        return nextState, reward 
-
+        return nextState, reward
 
     def step(self, action):
 
@@ -240,12 +237,11 @@ class MakeToStockEnv(gym.Env):
         done = False
         info = {}
 
-        return nextState, reward, done, info 
-
+        return nextState, reward, done, info
 
     def reset(self):
-        self.scalar_state = self.myRandomPRNG.randint(0, self.m+self.B+1)
-        self.vector_state = self.myRandomPRNG.randint(1, self.customer_classes+1)
+        self.scalar_state = self.myRandomPRNG.randint(0, self.m + self.B + 1)
+        self.vector_state = self.myRandomPRNG.randint(1, self.customer_classes + 1)
 
         initialState = [self.scalar_state, self.vector_state]
 
