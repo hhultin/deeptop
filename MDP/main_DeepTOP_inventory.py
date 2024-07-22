@@ -1,38 +1,14 @@
-
-import os
-import torch
-import random
 import argparse
-from copy import deepcopy
-import itertools
-import numpy as np
-import operator
+import random
 import time
-import pandas as pd
-import matplotlib.pyplot as plt
-import sys
-import copy
-import math
-import torch.nn as nn
-import torch.nn.functional as F
-from MDP_Env import inventoryEnv
+from copy import deepcopy
+
+import numpy as np
+import torch
+
+import parameters_inventory as params
 from DeepTOP import DeepTOP_MDP
-
-
-
-
-def initializeEnv():
-    global env
-    demand_list = []
-    for t in range(10):
-        demand_list.append(math.sin(math.pi * t/10.0)*300)
-    env = inventoryEnv(100, 1000, 500, demand_list, 20)
-
-
-def resetEnvs():
-    global state, env
-    state = env.reset()
-
+from MDP_Env import inventoryEnv
 
 if __name__ == '__main__':
 
@@ -41,7 +17,8 @@ if __name__ == '__main__':
     parser.add_argument('--mode', default='train', type=str, help='support option: train/test')
     parser.add_argument('--rate', default=0.001, type=float, help='learning rate')
     parser.add_argument('--prate', default=0.0001, type=float, help='policy net learning rate (only for DDPG)')
-    parser.add_argument('--warmup', default=1000, type=int, help='time without training but only filling the replay memory')
+    parser.add_argument('--warmup', default=1000, type=int,
+                        help='time without training but only filling the replay memory')
     parser.add_argument('--discount', default=0.99, type=float, help='')
     parser.add_argument('--bsize', default=64, type=int, help='minibatch size')
     parser.add_argument('--rmsize', default=60000, type=int, help='memory size')
@@ -50,9 +27,11 @@ if __name__ == '__main__':
     parser.add_argument('--ou_theta', default=0.15, type=float, help='noise theta')
     parser.add_argument('--ou_sigma', default=0.2, type=float, help='noise sigma')
     parser.add_argument('--ou_mu', default=0.0, type=float, help='noise mu')
-    parser.add_argument('--validate_episodes', default=20, type=int, help='how many episode to perform during validate experiment')
+    parser.add_argument('--validate_episodes', default=20, type=int,
+                        help='how many episode to perform during validate experiment')
     parser.add_argument('--max_episode_length', default=500, type=int, help='')
-    parser.add_argument('--validate_steps', default=2000, type=int, help='how many steps to perform a validate experiment')
+    parser.add_argument('--validate_steps', default=2000, type=int,
+                        help='how many steps to perform a validate experiment')
     parser.add_argument('--output', default='output', type=str, help='')
     parser.add_argument('--debug', dest='debug', action='store_true')
     parser.add_argument('--init_w', default=0.003, type=float, help='')
@@ -61,7 +40,6 @@ if __name__ == '__main__':
     parser.add_argument('--seed', default=458472, type=int, help='')
     parser.add_argument('--resume', default='default', type=str, help='Resuming model path for testing')
 
-
     args = parser.parse_args()
 
     np.random.seed(args.seed)
@@ -69,40 +47,34 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
 
-
-    env = None
-    state = None
-    state_dim = 1
-    action_dim = 1
-    initializeEnv()
-    #initialize agent
+    env = inventoryEnv(params.env_seed, params.cap, params.order_size, params.demand_list, params.selling_price)
+    # initialize agent
     hidden = [128, 128]
-    agent = DeepTOP_MDP(state_dim, action_dim, hidden, args)
+    agent = DeepTOP_MDP(params.state_dim, params.action_dim, hidden, args)
 
-    resetEnvs()
+    state = env.reset()
     agent.reset(state)
-
-    cumulative_reward = 0
 
     t = time.localtime()
     current_time = time.strftime("%H:%M:%S", t)
-    
+
     iteration = 0
     num_step = 0
+    cumulative_reward = 0
 
-    for t in range(260001):
-        if t % 13000 == 0:
+    for t in range(params.num_iter * params.num_runs + 1):
+        if t % params.num_iter == 0:
             iteration = iteration + 1
             num_step = 0
+            cumulative_reward = 0
             print(f'iteration {iteration}')
-            agent = DeepTOP_MDP(state_dim, action_dim, hidden, args)
+            agent = DeepTOP_MDP(params.state_dim, params.action_dim, hidden, args)
 
-            resetEnvs()
+            state = env.reset()
             agent.reset(state)
 
         agent.is_training = True
         num_step = num_step + 1
-
 
         if num_step <= args.warmup:
             action = agent.random_action()
@@ -117,12 +89,12 @@ if __name__ == '__main__':
 
         # agent observes and update policy
         agent.observe(reward, next_state, done)
+        cumulative_reward = cumulative_reward + reward
         if num_step > args.warmup:
-            cumulative_reward = cumulative_reward + reward
             agent.update_policy()
-            if( (num_step-args.warmup)%100 == 0 ):
-                print(f'{cumulative_reward/100}')
-                cumulative_reward = 0
-        
+        if num_step % params.log_interval == 0:
+            print(f'{cumulative_reward / params.log_interval}')
+            cumulative_reward = 0
+
         state = deepcopy(next_state)
 
