@@ -6,9 +6,9 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-import parameters_inventory as params
-from MDP_Env import inventoryEnv
-from td3 import TD3
+from deeptop.MDP import parameters_inventory as params
+from .MDP_Env import inventoryEnv
+from .td3 import TD3
 
 
 def sig(x):

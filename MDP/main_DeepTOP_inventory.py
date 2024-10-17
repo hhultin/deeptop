@@ -6,9 +6,9 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-import parameters_inventory as params
-from DeepTOP import DeepTOP_MDP
-from MDP_Env import inventoryEnv
+from deeptop.MDP import parameters_inventory as params
+from .DeepTOP import DeepTOP_MDP
+from .MDP_Env import inventoryEnv
 
 if __name__ == '__main__':
 

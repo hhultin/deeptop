@@ -6,9 +6,9 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-import parameters_make_to_stock as params
-from DeepTOP import DeepTOP_MDP
-from MDP_Env import MakeToStockEnv
+from deeptop.MDP import parameters_make_to_stock as params
+from .DeepTOP import DeepTOP_MDP
+from .MDP_Env import MakeToStockEnv
 
 if __name__ == '__main__':
 

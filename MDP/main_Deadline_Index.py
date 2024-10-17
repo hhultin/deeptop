@@ -6,9 +6,9 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-import parameters_charging as params
-from MDP_Env import chargingEnv
-from deadline_index import Deadline_Index
+from deeptop.MDP import parameters_charging as params
+from .MDP_Env import chargingEnv
+from .deadline_index import Deadline_Index
 
 if __name__ == '__main__':
 

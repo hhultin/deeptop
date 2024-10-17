@@ -4,11 +4,16 @@ import time
 from copy import deepcopy
 
 import numpy as np
+# Define compatibility for old numpy float
+if not hasattr(np, 'float'):
+    np.float = float
+import os
+import time
 import torch
 
-import parameters_charging as params
-from DeepTOP import DeepTOP_MDP
-from MDP_Env import chargingEnv
+from deeptop.MDP import parameters_charging as params
+from .DeepTOP import DeepTOP_MDP
+from .MDP_Env import chargingEnv
 
 if __name__ == '__main__':
 
@@ -62,13 +67,19 @@ if __name__ == '__main__':
     iteration = 0
     num_step = 0
     cumulative_reward = 0
+    run_times = []
 
     for t in range(params.num_iter * params.num_runs + 1):
         if t % params.num_iter == 0:
+            if iteration > 0:
+                end_time = time.time()
+                run_time = end_time - start_time
+                run_times.append(run_time)
             iteration = iteration + 1
             num_step = 0
             cumulative_reward = 0
             print(f'iteration {iteration}')
+            start_time = time.time()
             agent = DeepTOP_MDP(params.state_dim, params.action_dim, hidden, args)
 
             state = env.reset()
@@ -98,3 +109,11 @@ if __name__ == '__main__':
             print(f'{cumulative_reward / params.log_interval}')
             cumulative_reward = 0
         state = deepcopy(next_state)
+
+    results_dir = os.path.join(os.getcwd(), "results") 
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+    save_path = os.path.join(results_dir, f"run_times_DeepTOP_charging.npy")
+    
+    # Save the run times as a numpy array
+    np.save(save_path, np.array(run_times))

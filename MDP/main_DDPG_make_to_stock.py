@@ -6,9 +6,9 @@ from copy import deepcopy
 import numpy as np
 import torch
 
-import parameters_make_to_stock as params
-from MDP_Env import MakeToStockEnv
-from ddpg import DDPG
+from deeptop.MDP import parameters_make_to_stock as params
+from .MDP_Env import MakeToStockEnv
+from .ddpg import DDPG
 
 
 def sig(x):

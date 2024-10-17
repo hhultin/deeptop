@@ -7,7 +7,7 @@ import datetime
 import numpy as np
 import pandas as pd
 from gym import spaces
-from random_process import OrnsteinUhlenbeckProcess
+from .random_process import OrnsteinUhlenbeckProcess
 
 
 class chargingEnv(gym.Env):
